@@ -10,10 +10,10 @@ library(htmltools)
 #library(flextable)
 library(htmlwidgets)
 library(shinyjs)
-load("Data/aggregated_results.RDa")
-load("Data/imp_aggregated_results.RDa")
+load("Data/aggregated_results.Rda")
+load("Data/imp_aggregated_results.Rda")
 study_names=names(results_imp[1:22])
-load("data/vars.RDa")
+load("Data/vars.Rda")
 `%notin%`=Negate(`%in%`)
 unpack=function(list)
 {
@@ -107,41 +107,41 @@ ui <- fluidPage(
                  plotOutput("marginal", width = "100%")
                )
              )
-    ),
+    )#,
     
-    tabPanel("Unadjusted vs Adjusted Effects", fluid=T,
-             shinyjs::useShinyjs(),
-             sidebarLayout(
-               sidebarPanel(
-                 #radioButtons("data3", label="Data", choices = list("Imputed dataset"=T,"Complete Case"=F), selected = T),
-                 selectInput("outcome3", "Outcome", choices= outcomes),
-                 selectInput("interaction3", "Interaction", choices = interaction),
-                 # selectInput("set2", "Analysis Set", choices=analysis_sets),
-                 pickerInput("studies3", "Included Studies", choices =  study_names, selected =study_names, multiple = T ),
-                 actionButton("reset_input3", "Reset inputs"),
-                 width=4
-               ),
-               mainPanel(
-                 plotOutput("adj", width = "100%", height = "1200")
-               )
-             )
-    ),
-    tabPanel("Metabias", fluid=T,
-             shinyjs::useShinyjs(),
-             sidebarLayout(
-               sidebarPanel(
-                 #radioButtons("data4", label="Data", choices = list("Imputed dataset"=T,"Complete Case"=F), selected = T),
-                 selectInput("outcome4", "Outcome", choices= outcomes),
-                 selectInput("interaction4", "Interaction", choices = interaction),
-                 selectInput("set4", "Analysis Set", choices=analysis_sets),
-                 pickerInput("studies4", "Included Studies", choices =  study_names, selected =study_names, multiple = T ),
-                 actionButton("reset_input4", "Reset inputs"),
-                 width=4
-               ),
-               mainPanel(
-                 plotOutput("bias", width = "100%")
-               )
-             )
-    )
+    # tabPanel("Unadjusted vs Adjusted Effects", fluid=T,
+    #          shinyjs::useShinyjs(),
+    #          sidebarLayout(
+    #            sidebarPanel(
+    #              #radioButtons("data3", label="Data", choices = list("Imputed dataset"=T,"Complete Case"=F), selected = T),
+    #              selectInput("outcome3", "Outcome", choices= outcomes),
+    #              selectInput("interaction3", "Interaction", choices = interaction),
+    #              # selectInput("set2", "Analysis Set", choices=analysis_sets),
+    #              pickerInput("studies3", "Included Studies", choices =  study_names, selected =study_names, multiple = T ),
+    #              actionButton("reset_input3", "Reset inputs"),
+    #              width=4
+    #            ),
+    #            mainPanel(
+    #              plotOutput("adj", width = "100%", height = "1200")
+    #            )
+    #          )
+    # ),
+    # tabPanel("Metabias", fluid=T,
+    #          shinyjs::useShinyjs(),
+    #          sidebarLayout(
+    #            sidebarPanel(
+    #              #radioButtons("data4", label="Data", choices = list("Imputed dataset"=T,"Complete Case"=F), selected = T),
+    #              selectInput("outcome4", "Outcome", choices= outcomes),
+    #              selectInput("interaction4", "Interaction", choices = interaction),
+    #              selectInput("set4", "Analysis Set", choices=analysis_sets),
+    #              pickerInput("studies4", "Included Studies", choices =  study_names, selected =study_names, multiple = T ),
+    #              actionButton("reset_input4", "Reset inputs"),
+    #              width=4
+    #            ),
+    #            mainPanel(
+    #              plotOutput("bias", width = "100%")
+    #            )
+    #          )
+    # )
   )
 )

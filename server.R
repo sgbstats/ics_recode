@@ -14,7 +14,7 @@ library(shinyjs)
 
 # load("Data/aggregated_results.RDa")
 load("Data/imp_aggregated_results.Rda")
-load("Data/vars.RDa")
+load("Data/vars.Rda")
 results_shiny=results_imp
 study_names=names(results_imp[1:22])
 `%notin%`=Negate(`%in%`)
@@ -75,20 +75,20 @@ function(input, output, session) {
                       selected = studies2)
   })
   # 
-  observe({
-    studies3=unique((results_shiny[["aggregated_marginal"]][[input$outcome3]][[input$interaction3]][["included_main"]])$studLab)
-    
-    updatePickerInput(session, "studies3",
-                      choices = studies3,
-                      selected = studies3)
-  })
-  observe({
-    studies4=unique((results_shiny[["aggregated_marginal"]][[input$outcome4]][[input$interaction4]][[input$set4]])$studLab)
-    
-    updatePickerInput(session, "studies4",
-                      choices = studies4,
-                      selected = studies4)
-  })
+  # observe({
+  #   studies3=unique((results_shiny[["aggregated_marginal"]][[input$outcome3]][[input$interaction3]][["included_main"]])$studLab)
+  #   
+  #   updatePickerInput(session, "studies3",
+  #                     choices = studies3,
+  #                     selected = studies3)
+  # })
+  # observe({
+  #   studies4=unique((results_shiny[["aggregated_marginal"]][[input$outcome4]][[input$interaction4]][[input$set4]])$studLab)
+  #   
+  #   updatePickerInput(session, "studies4",
+  #                     choices = studies4,
+  #                     selected = studies4)
+  # })
   # 
   `%notin%`=Negate(`%in%`)
   unpack=function(list)
@@ -133,7 +133,7 @@ function(input, output, session) {
       filter(seTE<if_else(sm=="MD", 10,3))
     m=meta::metagen(data = agg_res, 
                     TE=TE, seTE=seTE, studlab = studLab, n.c = n.c, n.e=n.e, sm=sm,
-                    method.tau = "REML", random=T, fixed=F, control=list(maxiter=1000, verbose=F, step=0.5))
+                    method.tau = "REML", random=T, common=F, control=list(maxiter=1000, verbose=F, step=0.5))
     
     if(stat !="Diff")
     {
@@ -148,7 +148,7 @@ function(input, output, session) {
              col.square = "#FF0000",
              col.diamond = "#888888",
              lwd=2,
-             #xlim=c(1/input$xwidth, input$xwidth)
+             xlim=c(1/input$xwidth, input$xwidth)
       ) 
     }else{
       forest(m,
@@ -233,99 +233,72 @@ function(input, output, session) {
     
     
     
-    
-    # x=data%>%
-    #   dplyr::select(value, status, x1,x2,x3,x4) %>%
-    #   pivot_longer(col=-c("value", "status"), names_to = "pos", values_to = "x") %>%
-    #   mutate(pos=gsub("x", "", pos))
-    # 
-    # y=data%>%
-    #   dplyr::select(value, status, y1,y2,y3,y4) %>%
-    #   pivot_longer(col=-c("value", "status"), names_to = "pos", values_to = "y") %>%
-    #   mutate(pos=gsub("y", "", pos))
-    # 
-    # merge(x,y, by=c("value", "status", "pos")) %>%
-    #   mutate(v=factor(value)) %>%
-    #   ggplot(aes(x=x, y=y, fill=status, group=v))+
-    #   geom_polygon()+
-    #   geom_vline(xintercept = 1)+
-    #   labs(x=xlab,
-    #        y=ylab,
-    #        fill="Interpretation")+
-    #   theme_bw()+
-    #   scale_fill_manual(values=c("Favours ICS"="#4DAF4A",
-    #                              "Favours no ICS"="#E41A1C",
-    #                              "No significance"="#007AC0"))+
-    #   scale_x_log10()+
-    #    scale_y_continuous(breaks = yaxis)
-    
-    
   })
   
-  output$adj=renderPlot({
-    if(input$data3)
-    {
-      results_shiny=results_imp
-    }else
-    {
-      results_shiny=results
-    }
-    r=results_shiny[["aggregated"]][[input$outcome3]][[input$interaction3]][["included_main"]] %>% mutate(model="Adjusted") %>% 
-      rbind.data.frame(results_shiny[["aggregated"]][[input$outcome3]][[input$interaction3]][["unadjusted"]] %>% mutate(model="Unadjusted")) %>% 
-      mutate(studLab2=paste(studLab, model, sep="-")) %>% 
-      filter(studLab %in% input$studies3)
-    
-    m=metagen(data = r, subgroup = studLab,
-              TE=TE, seTE=seTE, studlab = studLab2,  sm="RR", method.tau = "REML", comb.random=F, comb.fixed=F)
-    if(input$interaction3=="main")
-    {
-      label.left="Favours ICS"
-      label.right="Favours No ICS"
-    }else 
-    {
-      label.left=paste0((interactions %>% filter(name==input$interaction3))$interpretation,"\nFavours ICS")
-      label.right=paste0((interactions %>% filter(name==input$interaction3))$interpretation,"\nFavours No ICS")
-      
-      
-    }
-    forest(m,
-           leftcols=c("model", "TE", "seTE" ),
-           leftlabs=c("Model", "log(RR)", "SE"),
-           just="c",  width = 9, colgap = "0.4cm",
-           label.left = label.left, label.right = label.right,
-           # label.e = "ICS", label.c = "No ICS",
-           # label.e.attach = "event.e", label.c.attach = "event.c",
-           col.square = "#FF0000",
-           col.diamond = "#888888",
-           subgroup.name = "",
-           fontsize = 14
-    ) 
-  })
-  
-  output$bias=renderPlot({
-    if(input$data4)
-    {
-      results_shiny=results_imp
-    }else
-    {
-      results_shiny=results
-    }
-    agg_res=results_shiny[["aggregated"]][[input$outcome4]][[input$interaction4]][[input$set4]] %>% filter(studLab %in% input$studies4)
-    if(input$interaction=="main")
-    {
-      label.left="Favours ICS"
-      label.right="Favours No ICS"
-    }else 
-    {
-      label.left=paste0((interactions %>% filter(name==input$interaction))$interpretation,"\nFavours ICS")
-      label.right=paste0((interactions %>% filter(name==input$interaction))$interpretation,"\nFavours No ICS")
-      
-      
-    }
-    m=metagen(data = agg_res, 
-              TE=TE, seTE=seTE, studlab = studLab, n.c = n.c, n.e=n.e, sm="RR", method.tau = "REML", comb.random=T, comb.fixed=F)
-    funnel(m, studlab = T)
-  })
+  # output$adj=renderPlot({
+  #   if(input$data3)
+  #   {
+  #     results_shiny=results_imp
+  #   }else
+  #   {
+  #     results_shiny=results
+  #   }
+  #   r=results_shiny[["aggregated"]][[input$outcome3]][[input$interaction3]][["included_main"]] %>% mutate(model="Adjusted") %>% 
+  #     rbind.data.frame(results_shiny[["aggregated"]][[input$outcome3]][[input$interaction3]][["unadjusted"]] %>% mutate(model="Unadjusted")) %>% 
+  #     mutate(studLab2=paste(studLab, model, sep="-")) %>% 
+  #     filter(studLab %in% input$studies3)
+  #   
+  #   m=metagen(data = r, subgroup = studLab,
+  #             TE=TE, seTE=seTE, studlab = studLab2,  sm="RR", method.tau = "REML", random=F, fixed=F)
+  #   if(input$interaction3=="main")
+  #   {
+  #     label.left="Favours ICS"
+  #     label.right="Favours No ICS"
+  #   }else 
+  #   {
+  #     label.left=paste0((interactions %>% filter(name==input$interaction3))$interpretation,"\nFavours ICS")
+  #     label.right=paste0((interactions %>% filter(name==input$interaction3))$interpretation,"\nFavours No ICS")
+  #     
+  #     
+  #   }
+  #   forest(m,
+  #          leftcols=c("model", "TE", "seTE" ),
+  #          leftlabs=c("Model", "log(RR)", "SE"),
+  #          just="c",  width = 9, colgap = "0.4cm",
+  #          label.left = label.left, label.right = label.right,
+  #          # label.e = "ICS", label.c = "No ICS",
+  #          # label.e.attach = "event.e", label.c.attach = "event.c",
+  #          col.square = "#FF0000",
+  #          col.diamond = "#888888",
+  #          subgroup.name = "",
+  #          fontsize = 14
+  #   ) 
+  # })
+  # 
+  # output$bias=renderPlot({
+  #   if(input$data4)
+  #   {
+  #     results_shiny=results_imp
+  #   }else
+  #   {
+  #     results_shiny=results
+  #   }
+  #   agg_res=results_shiny[["aggregated"]][[input$outcome4]][[input$interaction4]][[input$set4]] %>% filter(studLab %in% input$studies4)
+  #   if(input$interaction=="main")
+  #   {
+  #     label.left="Favours ICS"
+  #     label.right="Favours No ICS"
+  #   }else 
+  #   {
+  #     label.left=paste0((interactions %>% filter(name==input$interaction))$interpretation,"\nFavours ICS")
+  #     label.right=paste0((interactions %>% filter(name==input$interaction))$interpretation,"\nFavours No ICS")
+  #     
+  #     
+  #   }
+  #   m=metagen(data = agg_res, 
+  #             TE=TE, seTE=seTE, studlab = studLab, n.c = n.c, n.e=n.e, sm="RR", method.tau = "REML", comb.random=T, comb.fixed=F)
+  #   funnel(m, studlab = T)
+  # })
   
   observeEvent(input$reset_input, {
     shinyjs::reset("outcome")
@@ -342,17 +315,17 @@ function(input, output, session) {
     shinyjs::reset("data2")
   })
   
-  observeEvent(input$reset_input3, {
-    shinyjs::reset("outcome3")
-    shinyjs::reset("studies3")
-    shinyjs::reset("interaction3")
-    shinyjs::reset("data3")
-  })
-  observeEvent(input$reset_input4, {
-    shinyjs::reset("outcome4")
-    shinyjs::reset("set4")
-    shinyjs::reset("studies4")
-    shinyjs::reset("interaction4")
-    shinyjs::reset("data4")
-  })
+  # observeEvent(input$reset_input3, {
+  #   shinyjs::reset("outcome3")
+  #   shinyjs::reset("studies3")
+  #   shinyjs::reset("interaction3")
+  #   shinyjs::reset("data3")
+  # })
+  # observeEvent(input$reset_input4, {
+  #   shinyjs::reset("outcome4")
+  #   shinyjs::reset("set4")
+  #   shinyjs::reset("studies4")
+  #   shinyjs::reset("interaction4")
+  #   shinyjs::reset("data4")
+  # })
 }

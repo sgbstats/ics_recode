@@ -1,6 +1,21 @@
-
-# load("Data/imp_aggregated_results.RDa")
-# load("Data/vars.RDa")
+library(rlang)
+library(shiny)
+library(tidyverse)
+library(shinyWidgets)
+#library(lubridate)
+#library(readxl)
+library(ggplot2)
+#library(ggsankey)
+library(htmltools)
+#ibrary(flextable)
+library(htmlwidgets)
+library(meta)
+library(shinyjs)
+library(googledrive)
+load("Data/imp_aggregated_results.RDa")
+load("Data/vars.RDa")
+# load(url("https://raw.githubusercontent.com/sgbstats/ics_recode/main/Data/imp_aggregated_results.Rda"))
+# load(url("https://raw.githubusercontent.com/sgbstats/ics_recode/main/Data/vars.RDa"))
 study_names=names(results_imp[1:22])
 # load("Data/vars.RDa")
 `%notin%`=Negate(`%in%`)
@@ -20,6 +35,9 @@ names(interaction)=interactions$label
 
 interaction2=interactions$name[-1]
 names(interaction2)=interactions$label[-1]
+
+# load("Data/imp_aggregated_results.RDa")
+# load("Data/vars.RDa")
 #study_names=names(results)[names(results) %notin% c( "aggregated" ,  "aggregated_marginal" ,"meta"  ,   "meta_marginal"  ,"meta_diagnostics", "study_diagnostics"  )]
 # names(as)=c("All Included participants", "No Asthma", "Triple Thearpy Trials", "ICS at baseline", "No ICS at baseline")
 # 

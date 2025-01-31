@@ -22,9 +22,9 @@ library(googledrive)
 # load(out[2])
 # load(out[3])
 
-drive_deauth()
-# dl=drive_download("https://drive.google.com/file/d/1S3S06P1oMjd9DpLaotRazH5awEvFwdLG/view?usp=drive_link", path = "Data\\imp_aggregated_results.RDa", overwrite = T)
-# dl2=drive_download("https://drive.google.com/file/d/1J7e6skxB7KzMzigEdwDdGI5iOLjKhAh3/view?usp=sharing", path = "Data\\vars.RDa", overwrite = T)
+# drive_deauth()
+# dl=drive_download("https://drive.google.com/file/d/1pWO06CLeEvbSeTt-Pe-fQ7jBD9wXUd4E/view?usp=sharing", path = "Data\\imp_aggregated_results.RDa", overwrite = T)
+# dl2=drive_download("https://drive.google.com/file/d/1J7e6skxB7KzMzigEdwDdGI5iOLjKhAh3/view?usp=drive_link", path = "Data\\vars.RDa", overwrite = T)
 
 
 load("Data/imp_aggregated_results.RDa")
@@ -41,37 +41,7 @@ unpack=function(list)
     assign(i, list[[i]], envir = globalenv())
   }
 }
-# unpack(vars)
-# bold=1.5
-# fine=0.6
-# cols=c("Pooled"="#000000",
-#        "Dransfield1"="#660000", 
-#        "Dransfield2"="#E41A1C",
-#        "EFFECT"="#FF7F00",
-#        "IMPACT"="#F6CB2F",
-#        "Kerwin"="#F8FF00",
-#        "Martinez"="#4DAF4A",
-#        "Sharafkhaneh"="#33FF33",
-#        "Siler"="#007AC0",
-#        "SUMMIT"="#2C478A",
-#        "TORCH"="#aadfff",
-#        "TRISTAN"="#660099",
-#        "WISDOM"="#F77FBE")
-# line=c("Pooled"=bold,
-#        "Dransfield1"=fine,
-#        "Dransfield2"=fine,
-#        "EFFECT"=fine,
-#        "IMPACT"=fine,
-#        "Martinez"=fine,
-#        "Kerwin"=fine,
-#        "Sharafkhaneh"=fine,
-#        "SUMMIT"=fine,
-#        "TORCH"=fine,
-#        "TRISTAN"=fine,
-#        "Siler"=fine,
-#        "WISDOM"=fine)
 
-# Define server logic required to draw a histogram
 function(input, output, session) {
   
   observe({
@@ -115,14 +85,10 @@ function(input, output, session) {
     }
   }
   unpack(vars)
+  
+  
   output$forest=renderPlot({
-    # if(input$data)
-    # {
-    # results_shiny=results_imp
-    # }else
-    # {
-    # results_shiny=results
-    # }
+
     
     if(input$interaction=="main")
     {

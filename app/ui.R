@@ -12,11 +12,10 @@ library(htmlwidgets)
 library(meta)
 library(shinyjs)
 library(googledrive)
-load("Data/imp_aggregated_results.RDa")
+load("Data/study_names.RDa")
 load("Data/vars.RDa")
-# load(url("https://raw.githubusercontent.com/sgbstats/ics_recode/main/Data/imp_aggregated_results.Rda"))
-# load(url("https://raw.githubusercontent.com/sgbstats/ics_recode/main/Data/vars.RDa"))
-study_names=names(results_imp[1:22])
+# 
+# study_names=names(results_imp[1:22])
 # load("Data/vars.RDa")
 `%notin%`=Negate(`%in%`)
 unpack=function(list)
@@ -84,6 +83,8 @@ ui <- fluidPage(
                  shinyjs::useShinyjs(),
                  id = "side-panel",
                  #radioButtons("data", label="Data", choices = list("Imputed dataset"=T,"Complete Case"=F), selected = T),
+                 # textInput("pw", "passcode"),
+                 # actionButton("release_data", "Release Data"),
                  selectInput("outcome", "Outcome", choices= outcomes),
                  selectInput("interaction", "Interaction", choices = interaction),
                  selectInput("set", "Analysis Set", choices=analysis_sets, selected = "included_main"),

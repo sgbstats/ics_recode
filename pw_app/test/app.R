@@ -229,48 +229,67 @@ server <- function(input, output, session) {
                               lowerrr>1~"Favours no ICS",
                               T~"No significance"))
     # 
-    yaxis=unique(data$value)
+    xaxis=unique(data$value)
     #names(yaxis)=yaxis
-    if(input$interaction2=="smoking_bl")
-    {
-      names(yaxis)=c("Current smoker", "Former smoker")
-    }else if(input$interaction2=="ics_bl")
-    {
-      names(yaxis)=c("ICS", "No ICS")
-    }else if(input$interaction2=="laba_bl")
-    {
-      names(yaxis)=c("LABA", "No LABA")
-    }else
-    {
-      names(yaxis)=yaxis
+    if(input$interaction2=="smoking_bl"){
+      names(xaxis)=c("Current smoker", "Former smoker")
+    }else if(input$interaction2=="ics_bl"){
+      names(xaxis)=c("ICS", "No ICS")
+    }else if(input$interaction2=="laba_bl"){
+      names(xaxis)=c("LABA", "No LABA")
+    }else{
+      names(xaxis)=xaxis
     }
     
-    xlab=if_else(outcome$class=="count", "Risk ratio", "Hazard ratio")
+    # xlab=case_when(outcome$class=="count"~"Risk ratio",
+    #                outcome$class=="tte"~"Hazard ratio",
+    #                outcome$class=="lm"~"Mean difference",
+    #                outcome$class=="logisitc"~"Odds ratio")
+    
     ylab=if_else(input$interaction2 %in% c("ics_bl", "laba_bl", "smoking_bl"), interaction$label,paste0(interaction$label, " (", interaction$unit, ")"))
+    no_effect=if_else(outcome$class=="lm", 0,1)
     
-    p=data %>% ggplot(aes(x=rr, y=value, colour=status, xmin=lowerrr, xmax=upperrr))+
-      geom_point(size=5)+
-      geom_errorbarh(linewidth=1)+
-      geom_vline(xintercept = 1, linewidth=1)+
-      labs(x=xlab,
-           y=ylab,
-           colour="Interpretation")+
-      theme_bw()+
-      scale_colour_manual(values=c("Favours ICS"="#4DAF4A",
-                                   "Favours no ICS"="#E41A1C",
-                                   "No significance"="#007AC0"))+
-      scale_x_log10()
-    if(interaction$value=="logical_v")
-    {
-      p+scale_y_discrete(breaks = yaxis, labels=names(yaxis))
-    }else
-    {
-      p+scale_y_continuous(breaks = yaxis)
+    if(interaction$value!="logical_v")  {
+      p1=data %>% ggplot(aes(y=rr, x=value, ymin=lowerrr, ymax=upperrr))+
+        geom_line(linewidth=1, col="#007AC0")+
+        geom_ribbon(alpha=0.3, col="#007AC0", fill="#007AC0")+
+        geom_hline(yintercept = no_effect, linewidth=1)+
+        theme_classic()+
+        theme(legend.position="top",
+              plot.margin = margin(5.5, 5.5, 5.5, 5.5))+
+        scale_y_log10()+
+        coord_cartesian(clip="off")+
+        scale_x_continuous(breaks = xaxis)+
+        labs(y=case_when(outcome$class=="count"~ "Risk ratio",
+                         outcome$class=="tte"~"Hazard ratio",
+                         outcome$class=="logistic"~"Odds Ratio",
+                         grepl("sgrq",outcome$outcome)~"Mean difference",
+                         outcome$class=="lm"~"Mean difference (L)"),
+             x=paste0(interaction$label, " (", interaction$unit, ")"))
+    }else {
+      p1=data %>% ggplot(aes(y=rr, x=value, ymin=lowerrr, ymax=upperrr))+
+        geom_point(size=5, ,col="#007AC0")+
+        geom_errorbar(linewidth=1,col="#007AC0")+
+        geom_hline(yintercept = no_effect, linewidth=1)+
+        theme_classic()+
+        theme(legend.position="top",
+              plot.margin = margin(5.5, 5.5, 5.5, 5.5))+
+        scale_y_log10()+
+        coord_cartesian(clip="off")+
+        scale_x_discrete(labels = names(xaxis))+
+        labs(y=case_when(outcome$class=="count"~ "Risk ratio",
+                         outcome$class=="tte"~"Hazard ratio",
+                         outcome$class=="logistic"~"Odds Ratio",
+                         grepl("sgrq",outcome$outcome)~"Mean difference",
+                         outcome$class=="lm"~"Mean difference (L)"),
+             x=""
+        )
     }
     
-    
+    p1
     
   })
+  
   observeEvent(list(input$interaction, input$outcome, input$set),{
     req(input$interaction, input$outcome, input$set)
     studies=(results_shiny[["aggregated"]][[input$outcome]][[input$interaction]][[input$set]])$studLab

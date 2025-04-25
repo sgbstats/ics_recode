@@ -13,15 +13,19 @@ library(meta)
 library(shinyjs)
 library(flextable)
 library(bslib)
+library(httr)
+library(jsonlite)
+library(promises)
+library(future)
 # library(googledrive)
 load("Data/imp_aggregated_results.RDa")
 load("Data/vars.RDa")
 load("Data/study_names.RDa")
-load("Data/submodels_pneum.RDa")
-load("Data/submodels_modsev.RDa")
-load("Data/submodels_sev.RDa")
+# load("Data/submodels_pneum.RDa")
+# load("Data/submodels_modsev.RDa")
+# load("Data/submodels_sev.RDa")
 source("helper_scripts/prediction.R")
-
+plan(multisession)
 unpack=function(list)
 {
   for(i in names(list))
@@ -146,7 +150,8 @@ server <- function(input, output, session) {
                                         navset_card_underline(
                                           nav_panel("Plot",plotOutput("waffle1")),
                                           nav_panel("Table",  uiOutput("table1")),
-                                          nav_panel("Coefficients",uiOutput("coefs"))
+                                          nav_panel("Coefficients",uiOutput("coefs")),
+                                          nav_panel("debug", textOutput("my_results"))
                                         )
                        )
               ),
@@ -354,40 +359,68 @@ server <- function(input, output, session) {
     
   })
   
-  pred=eventReactive(input$go,{
-    # validate(
-    #   need(input$age_imp>30, ""),
-    #   need(input$age_imp>100, ""),
-    #   need(input$eos_bl>=0, ""),
-    #   need(input$eos_bl<3, ""),
-    #   need(input$eos_bl>=0, ""),
-    #   need(input$trt_dur>0.25, ""),
-    #   need(input$trt_dur<2, "")
-    # )
-    
-    eos=if_else("Eos" %in% input$vars_to_use,input$eos_bl/1000, NA_integer_)
-    age=if_else("Age" %in% input$vars_to_use,input$age_imp, NA_integer_)
-    exac=if_else("Exacerbations" %in% input$vars_to_use,input$exac_bl, NA_integer_)
-    sex=if_else("Sex" %in% input$vars_to_use,input$sex, NA_character_)
-    fev1=if_else("FEV1" %in% input$vars_to_use,input$fev1_bl, NA_integer_)
-    smoking=if_else("Smoking" %in% input$vars_to_use,input$smoking_bl, NA_character_)
-    
-    
-    test3=tribble(~"arm_ipd", ~"eos_bl",~"age_imp",~"exac_bl",~"sex",~"fev1_bl",~"smoking_bl",~"trt_dur",
-                  "ICS", eos, age, exac, sex,fev1, smoking, input$trt_dur,
-                  "Control", eos, age, exac, sex,fev1, smoking, input$trt_dur,)
-    
-    exac_modsev=predict.submodels(test3, submodels.object_modsev, type="response")
-    exac_sev=predict.submodels(test3, submodels.object_sev, type="response")
-    exac_pneum=predict.submodels(test3, submodels.object_pneum, type="response")
-    
-    list("modsev"=exac_modsev,
-         "sev"=exac_sev,
-         "pneum"=exac_pneum,
-         "data"=test3)
-    
-  })
+  # pred=eventReactive(input$go,{
+  #   # validate(
+  #   #   need(input$age_imp>30, ""),
+  #   #   need(input$age_imp>100, ""),
+  #   #   need(input$eos_bl>=0, ""),
+  #   #   need(input$eos_bl<3, ""),
+  #   #   need(input$eos_bl>=0, ""),
+  #   #   need(input$trt_dur>0.25, ""),
+  #   #   need(input$trt_dur<2, "")
+  #   # )
+  #   
+  #   eos=if_else("Eos" %in% input$vars_to_use,input$eos_bl/1000, NA_integer_)
+  #   age=if_else("Age" %in% input$vars_to_use,input$age_imp, NA_integer_)
+  #   exac=if_else("Exacerbations" %in% input$vars_to_use,input$exac_bl, NA_integer_)
+  #   sex=if_else("Sex" %in% input$vars_to_use,input$sex, NA_character_)
+  #   fev1=if_else("FEV1" %in% input$vars_to_use,input$fev1_bl, NA_integer_)
+  #   smoking=if_else("Smoking" %in% input$vars_to_use,input$smoking_bl, NA_character_)
+  #   
+  #   
+  #   test3=tribble(~"arm_ipd", ~"eos_bl",~"age_imp",~"exac_bl",~"sex",~"fev1_bl",~"smoking_bl",~"trt_dur",
+  #                 "ICS", eos, age, exac, sex,fev1, smoking, input$trt_dur,
+  #                 "Control", eos, age, exac, sex,fev1, smoking, input$trt_dur,)
+  #   
+  #   exac_modsev=predict.submodels(test3, submodels.object_modsev, type="response")
+  #   exac_sev=predict.submodels(test3, submodels.object_sev, type="response")
+  #   exac_pneum=predict.submodels(test3, submodels.object_pneum, type="response")
+  #   
+  #   list("modsev"=exac_modsev,
+  #        "sev"=exac_sev,
+  #        "pneum"=exac_pneum,
+  #        "data"=test3)
+  #   
+  # })
+
   
+  pred <- eventReactive(input$go, {
+
+      eos=if_else("Eos" %in% input$vars_to_use,input$eos_bl/1000, NA_integer_)
+      age=if_else("Age" %in% input$vars_to_use,input$age_imp, NA_integer_)
+      exac=if_else("Exacerbations" %in% input$vars_to_use,input$exac_bl, NA_integer_)
+      sex=if_else("Sex" %in% input$vars_to_use,input$sex, NA_character_)
+      fev1=if_else("FEV1" %in% input$vars_to_use,input$fev1_bl, NA_integer_)
+      smoking=if_else("Smoking" %in% input$vars_to_use,input$smoking_bl, NA_character_)
+
+
+      test3=tribble(~"arm_ipd", ~"eos_bl",~"age_imp",~"exac_bl",~"sex",~"fev1_bl",~"smoking_bl",~"trt_dur",
+                    "ICS", eos, age, exac, sex,fev1, smoking, input$trt_dur,
+                    "Control", eos, age, exac, sex,fev1, smoking, input$trt_dur,)
+
+      tryCatch({
+        api_url <- "http://127.0.0.1:8000/predict"
+        response <- httr::POST(api_url, body = list(newdata=as.list(test3)), 
+                               encode = "json")
+        
+        content= content(response, "text") %>% fromJSON()
+        
+      }, error = function(e) {
+        showNotification("API error occurred", type = "error")
+        NULL
+      })
+    }) 
+
   
   output$table1=renderUI({
     exac_modsev=pred()$modsev

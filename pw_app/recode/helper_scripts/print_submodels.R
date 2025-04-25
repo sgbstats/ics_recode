@@ -6,13 +6,13 @@ submodel.print=function(submodels.object, long_wide=c("long", "wide")){
     return(x)
   }
   out[["meta"]]=submodels.object[["meta"]]
-  coefficients=tribble(~"pattern",~"formula",~"var", ~"coef" )
+  coefficients=tidyr::tribble(~"pattern",~"formula",~"var", ~"coef" )
   for(i in 1:(length(submodels.object)-1)){
     # cat(paste(i, "\n"))
-    coefficients1=data.frame("pattern"=submodels.object[["meta"]][["all.patterns"]][i],
+    coefficients1=data.frame("pattern"=submodels.object[["meta"]][["all.patterns"]][i] %>% as.vector(),
                              "formula"=(submodels.object[[i]][["mod"]][["terms"]] %>% as.character())[3],
-                             "var"=names(submodels.object[[i]][["mod"]][["coefficients"]]),
-                             "coef"=submodels.object[[i]][["mod"]][["coefficients"]])
+                             "var"=names(submodels.object[[i]][["mod"]][["coefficients"]])%>% as.vector(),
+                             "coef"=submodels.object[[i]][["mod"]][["coefficients"]])%>% as.vector()
     row.names(coefficients1)=NULL
     coefficients=rbind(coefficients, coefficients1)
     

@@ -150,8 +150,7 @@ server <- function(input, output, session) {
                                         navset_card_underline(
                                           nav_panel("Plot",plotOutput("waffle1")),
                                           nav_panel("Table",  uiOutput("table1")),
-                                          nav_panel("Coefficients",uiOutput("coefs")),
-                                          nav_panel("debug", textOutput("my_results"))
+                                          nav_panel("Coefficients",uiOutput("coefs2"))
                                         )
                        )
               ),
@@ -455,30 +454,50 @@ server <- function(input, output, session) {
     
   })
   
-  output$coefs=renderUI({
-    
-    
-    
-    unpack(missingness_pattern(pred()$data))
-    
-    coef_modsev=submodel.print(submodels.object_modsev)
-    coef_sev=submodel.print(submodels.object_sev)
-    coef_pneum=submodel.print(submodels.object_pneum)
-    
-    interpretation=data.frame("var"=c("(Intercept)","age_imp","arm_ipdICS", "arm_ipdICS:eos_bl","eos_bl","exac_bl","fev1_bl","sexM","smoking_blCurrent"),
-                              "interpretation"=c("Intercept", "Age", "ICS-Yes", "Eos Interaction", "Eos/10^9", "Per Exac", "FEV1/L", "Sex-Male", "Smoking-Current"))
-    
-    coef_modsev[["coefficients"]] %>% rename("modsev"="coef") %>% 
-      merge(coef_sev[["coefficients"]] %>% rename("sev"="coef") ) %>%
-      merge(coef_pneum[["coefficients"]] %>% rename("pneum"="coef") ) %>%
-      mutate(pattern=as.character(pattern)) %>%
-      filter(pattern==as.character(tmp.pattern[1])) %>%
-      merge(interpretation) %>%
-      dplyr::select(interpretation, modsev, sev, pneum) %>%
-      mutate(modsev=sprintf("%.3f", modsev),
-             sev=sprintf("%.3f", sev),
-             pneum=sprintf("%.3f", pneum)) %>% 
-      flextable::flextable() %>% 
+  # output$coefs=renderUI({
+  #   
+  #   
+  #   
+  #   unpack(missingness_pattern(pred()$data))
+  #   
+  #   coef_modsev=submodel.print(submodels.object_modsev)
+  #   coef_sev=submodel.print(submodels.object_sev)
+  #   coef_pneum=submodel.print(submodels.object_pneum)
+  #   
+  #   interpretation=data.frame("var"=c("(Intercept)","age_imp","arm_ipdICS", "arm_ipdICS:eos_bl","eos_bl","exac_bl","fev1_bl","sexM","smoking_blCurrent"),
+  #                             "interpretation"=c("Intercept", "Age", "ICS-Yes", "Eos Interaction", "Eos/10^9", "Per Exac", "FEV1/L", "Sex-Male", "Smoking-Current"))
+  #   
+  #   coef_modsev[["coefficients"]] %>% rename("modsev"="coef") %>% 
+  #     merge(coef_sev[["coefficients"]] %>% rename("sev"="coef") ) %>%
+  #     merge(coef_pneum[["coefficients"]] %>% rename("pneum"="coef") ) %>%
+  #     mutate(pattern=as.character(pattern)) %>%
+  #     filter(pattern==as.character(tmp.pattern[1])) %>%
+  #     merge(interpretation) %>%
+  #     dplyr::select(interpretation, modsev, sev, pneum) %>%
+  #     mutate(modsev=sprintf("%.3f", modsev),
+  #            sev=sprintf("%.3f", sev),
+  #            pneum=sprintf("%.3f", pneum)) %>% 
+  #     flextable::flextable() %>% 
+  #     set_header_labels(interpretation="Variable",
+  #                       modsev="Mod/Sev",
+  #                       sev="Sev",
+  #                       pneum="Pneum") %>%
+  #     align(align="center", part="header") %>%
+  #     align(j=2:4,align="center", part="body") %>%
+  #     valign(valign="bottom", part = "header")%>%
+  #     valign( valign="top", part = "body")%>%
+  #     # merge_v(j=1:2)%>%
+  #     autofit() %>%
+  #     font(fontname = "Arial", part="all") %>% 
+  #     htmltools_value()
+  # })
+  
+  output$coefs2=renderUI({
+
+
+
+    pred()$coefs %>%
+      flextable::flextable() %>%
       set_header_labels(interpretation="Variable",
                         modsev="Mod/Sev",
                         sev="Sev",
@@ -489,7 +508,7 @@ server <- function(input, output, session) {
       valign( valign="top", part = "body")%>%
       # merge_v(j=1:2)%>%
       autofit() %>%
-      font(fontname = "Arial", part="all") %>% 
+      font(fontname = "Arial", part="all") %>%
       htmltools_value()
   })
   

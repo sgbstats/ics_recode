@@ -12,7 +12,7 @@ predict.submodels <- function(newdata, submodels.object,se.fit=TRUE,retain_lhs=F
   
   #keeping the correct bits of data.
   mod.data<-newdata %>% dplyr::select(any_of(c(mod.lhs, submodels.object[["meta"]][["vars"]]))) %>% 
-    drop_na(all_of(submodels.object[["meta"]][["force_variables"]]))
+    tidyr::drop_na(all_of(submodels.object[["meta"]][["force_variables"]]))
   
   #its useful to have a copy
   sdata<- mod.data

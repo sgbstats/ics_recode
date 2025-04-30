@@ -21,9 +21,9 @@ library(future)
 load("Data/imp_aggregated_results.RDa")
 load("Data/vars.RDa")
 load("Data/study_names.RDa")
-# load("Data/submodels_pneum.RDa")
-# load("Data/submodels_modsev.RDa")
-# load("Data/submodels_sev.RDa")
+load("Data/submodels_pneum.RDa")
+load("Data/submodels_modsev.RDa")
+load("Data/submodels_sev.RDa")
 source("helper_scripts/prediction.R")
 plan(multisession)
 unpack=function(list)
@@ -143,15 +143,17 @@ server <- function(input, output, session) {
               tabPanel("Forest Plot", value = "forest", plotOutput("forest")),
               tabPanel("Marginal Plot", value = "marginal", plotOutput("marginal")),
               tabPanel("Prediction", value = "pred",
-                       conditionalPanel("input.go==0",
-                                        HTML("<b>Please press go to see the predictions</b>")
+                       conditionalPanel(
+                         condition = "!output.has_prediction_data",
+                         HTML("<b>Please press go to see the predictions</b>")
                        ),
-                       conditionalPanel("input.go==1",
-                                        navset_card_underline(
-                                          nav_panel("Plot",plotOutput("waffle1")),
-                                          nav_panel("Table",  uiOutput("table1")),
-                                          nav_panel("Coefficients",uiOutput("coefs2"))
-                                        )
+                       conditionalPanel(
+                         condition = "output.has_prediction_data",
+                         navset_card_underline(
+                           nav_panel("Plot", plotOutput("waffle1")),
+                           nav_panel("Table", uiOutput("table1")),
+                           nav_panel("Coefficients", uiOutput("coefs2"))
+                         )
                        )
               ),
             )
@@ -198,6 +200,21 @@ server <- function(input, output, session) {
     shinyjs::reset("smoking_bl")
     shinyjs::reset("trt_dur")
   })
+  
+  output$has_prediction_data <- reactive({
+    # Check if pred() has been run and returned valid data
+    pred_data <- try(pred(), silent = TRUE)
+    
+    # Return TRUE if we have valid prediction data
+    return(!is.null(pred_data) && 
+             !inherits(pred_data, "try-error") && 
+             !is.null(pred_data$modsev) && 
+             !is.null(pred_data$modsev$fit) && 
+             length(pred_data$modsev$fit) >= 2)
+  })
+  
+  # Make sure this reactive value is available to the UI
+  outputOptions(output, "has_prediction_data", suspendWhenHidden = FALSE)
   
   output$forest=renderPlot({
     
@@ -358,73 +375,93 @@ server <- function(input, output, session) {
     
   })
   
-  # pred=eventReactive(input$go,{
-  #   # validate(
-  #   #   need(input$age_imp>30, ""),
-  #   #   need(input$age_imp>100, ""),
-  #   #   need(input$eos_bl>=0, ""),
-  #   #   need(input$eos_bl<3, ""),
-  #   #   need(input$eos_bl>=0, ""),
-  #   #   need(input$trt_dur>0.25, ""),
-  #   #   need(input$trt_dur<2, "")
-  #   # )
-  #   
-  #   eos=if_else("Eos" %in% input$vars_to_use,input$eos_bl/1000, NA_integer_)
-  #   age=if_else("Age" %in% input$vars_to_use,input$age_imp, NA_integer_)
-  #   exac=if_else("Exacerbations" %in% input$vars_to_use,input$exac_bl, NA_integer_)
-  #   sex=if_else("Sex" %in% input$vars_to_use,input$sex, NA_character_)
-  #   fev1=if_else("FEV1" %in% input$vars_to_use,input$fev1_bl, NA_integer_)
-  #   smoking=if_else("Smoking" %in% input$vars_to_use,input$smoking_bl, NA_character_)
-  #   
-  #   
-  #   test3=tribble(~"arm_ipd", ~"eos_bl",~"age_imp",~"exac_bl",~"sex",~"fev1_bl",~"smoking_bl",~"trt_dur",
-  #                 "ICS", eos, age, exac, sex,fev1, smoking, input$trt_dur,
-  #                 "Control", eos, age, exac, sex,fev1, smoking, input$trt_dur,)
-  #   
-  #   exac_modsev=predict.submodels(test3, submodels.object_modsev, type="response")
-  #   exac_sev=predict.submodels(test3, submodels.object_sev, type="response")
-  #   exac_pneum=predict.submodels(test3, submodels.object_pneum, type="response")
-  #   
-  #   list("modsev"=exac_modsev,
-  #        "sev"=exac_sev,
-  #        "pneum"=exac_pneum,
-  #        "data"=test3)
-  #   
-  # })
+  pred=eventReactive(input$go,{
+
+    eos=if_else("Eos" %in% input$vars_to_use,input$eos_bl/1000, NA_integer_)
+    age=if_else("Age" %in% input$vars_to_use,input$age_imp, NA_integer_)
+    exac=if_else("Exacerbations" %in% input$vars_to_use,input$exac_bl, NA_integer_)
+    sex=if_else("Sex" %in% input$vars_to_use,input$sex, NA_character_)
+    fev1=if_else("FEV1" %in% input$vars_to_use,input$fev1_bl, NA_integer_)
+    smoking=if_else("Smoking" %in% input$vars_to_use,input$smoking_bl, NA_character_)
+
+
+    test3=tribble(~"arm_ipd", ~"eos_bl",~"age_imp",~"exac_bl",~"sex",~"fev1_bl",~"smoking_bl",~"trt_dur",
+                  "ICS", eos, age, exac, sex,fev1, smoking, input$trt_dur,
+                  "Control", eos, age, exac, sex,fev1, smoking, input$trt_dur,)
+
+    exac_modsev=predict.submodels(test3, submodels.object_modsev, type="response")
+    exac_sev=predict.submodels(test3, submodels.object_sev, type="response")
+    exac_pneum=predict.submodels(test3, submodels.object_pneum, type="response")
+
+    list("modsev"=exac_modsev,
+         "sev"=exac_sev,
+         "pneum"=exac_pneum,
+         "data"=test3)
+
+  })
 
   
-  pred <- eventReactive(input$go, {
 
-      eos=if_else("Eos" %in% input$vars_to_use,input$eos_bl/1000, NA_integer_)
-      age=if_else("Age" %in% input$vars_to_use,input$age_imp, NA_integer_)
-      exac=if_else("Exacerbations" %in% input$vars_to_use,input$exac_bl, NA_integer_)
-      sex=if_else("Sex" %in% input$vars_to_use,input$sex, NA_character_)
-      fev1=if_else("FEV1" %in% input$vars_to_use,input$fev1_bl, NA_integer_)
-      smoking=if_else("Smoking" %in% input$vars_to_use,input$smoking_bl, NA_character_)
-
-
-      test3=tribble(~"arm_ipd", ~"eos_bl",~"age_imp",~"exac_bl",~"sex",~"fev1_bl",~"smoking_bl",~"trt_dur",
-                    "ICS", eos, age, exac, sex,fev1, smoking, input$trt_dur,
-                    "Control", eos, age, exac, sex,fev1, smoking, input$trt_dur,)
-
-      tryCatch({
-        api_url <- "http://127.0.0.1:8000/predict"
-        response <- httr::POST(api_url, body = list(newdata=as.list(test3)), 
-                               encode = "json")
-        
-        content= content(response, "text") %>% fromJSON()
-        
-      }, error = function(e) {
-        showNotification("API error occurred", type = "error")
-        NULL
-      })
-    }) 
+  # input_data <- eventReactive(input$go, {
+  #   eos <- if_else("Eos" %in% input$vars_to_use, input$eos_bl / 1000, NA_integer_)
+  #   age <- if_else("Age" %in% input$vars_to_use, input$age_imp, NA_integer_)
+  #   exac <- if_else("Exacerbations" %in% input$vars_to_use, input$exac_bl, NA_integer_)
+  #   sex <- if_else("Sex" %in% input$vars_to_use, input$sex, NA_character_)
+  #   fev1 <- if_else("FEV1" %in% input$vars_to_use, input$fev1_bl, NA_integer_)
+  #   smoking <- if_else("Smoking" %in% input$vars_to_use, input$smoking_bl, NA_character_)
+  #   
+  #   tribble(
+  #     ~"arm_ipd", ~"eos_bl", ~"age_imp", ~"exac_bl", ~"sex", ~"fev1_bl", ~"smoking_bl", ~"trt_dur",
+  #     "ICS", eos, age, exac, sex, fev1, smoking, input$trt_dur,
+  #     "Control", eos, age, exac, sex, fev1, smoking, input$trt_dur
+  #   )
+  # })
+  # 
+  # library(promises)
+  # library(future)
+  # plan(multisession)
+  # 
+  # result_reactive <- reactiveVal(NULL)
+  # 
+  # observeEvent(input_data(), {
+  #   test3 <- input_data()
+  #   
+  #   future({
+  #     tryCatch({
+  #       api_url <- "http://127.0.0.1:8000/predict"
+  #       response <- httr::POST(api_url, body = list(newdata = as.list(test3)), encode = "json")
+  #       content <- httr::content(response, "text")
+  #       content <- jsonlite::fromJSON(content)
+  #       
+  #       list(
+  #         modsev = content$modsev,
+  #         sev = content$sev,
+  #         pneum = content$pneum,
+  #         coefs = content$coefs
+  #       )
+  #     }, error = function(e) {
+  #       stop(e)
+  #     })
+  #   }) %...>%
+  #     result_reactive() %...!%
+  #     (function(e) {
+  #       showNotification("API error occurred", type = "error")
+  #       result_reactive(NULL)
+  #     })
+  # })
+  
 
   
   output$table1=renderUI({
     exac_modsev=pred()$modsev
     exac_sev=pred()$sev
     exac_pneum=pred()$pneum
+    
+     # req(result_reactive())
+    
+    # exac_modsev <- result_reactive()$modsev
+    # exac_sev <- result_reactive()$sev
+    # exac_pneum <- result_reactive()$pneum
     
     tribble(~"outcome",~"trt", ~"events",
             "Mod/Sev Exac", "ICS", sprintf("%.1f",exac_modsev$fit[1]),
@@ -497,6 +534,7 @@ server <- function(input, output, session) {
 
 
     pred()$coefs %>%
+    # result_reactive()$coefs
       flextable::flextable() %>%
       set_header_labels(interpretation="Variable",
                         modsev="Mod/Sev",
@@ -517,7 +555,12 @@ server <- function(input, output, session) {
     exac_modsev=pred()$modsev
     exac_sev=pred()$sev
     exac_pneum=pred()$pneum
+    #  req(result_reactive())
     
+    # exac_modsev <- result_reactive()$modsev
+    # exac_sev <- result_reactive()$sev
+    # exac_pneum <- result_reactive()$pneum
+    # 
     ms_with_ics=100*exac_modsev$fit[1]
     ms_saved=100*(exac_modsev$fit[2]-exac_modsev$fit[1])
     s_with_ics=100*exac_sev$fit[1]

@@ -25,6 +25,16 @@ interpretation=data.frame("var"=c("(Intercept)","age_imp","arm_ipdICS", "arm_ipd
                           "interpretation"=c("Intercept", "Age", "ICS-Yes", "Eos Interaction", "Eos/10^9", "Per Exac", "FEV1/L", "Sex-Male", "Smoking-Current"))
 
 
+#* Log the incoming request
+#* @filter logger
+function(req) {
+  timestamp <- format(Sys.time(), "%Y-%m-%d %H:%M:%S")
+  cat(sprintf("[%s] %s %s\n",
+              timestamp,
+              req$REQUEST_METHOD,
+              req$PATH_INFO))
+  plumber::forward()
+}
 
 #* Make predictions using predict.submodels
 #* @param newdata JSON string containing the new data for prediction

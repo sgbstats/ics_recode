@@ -21,9 +21,9 @@ library(future)
 load("Data/imp_aggregated_results.RDa")
 load("Data/vars.RDa")
 load("Data/study_names.RDa")
-load("Data/submodels_pneum.RDa")
-load("Data/submodels_modsev.RDa")
-load("Data/submodels_sev.RDa")
+# load("Data/submodels_pneum.RDa")
+# load("Data/submodels_modsev.RDa")
+# load("Data/submodels_sev.RDa")
 source("helper_scripts/prediction.R")
 plan(multisession)
 unpack=function(list)
@@ -375,81 +375,88 @@ server <- function(input, output, session) {
     
   })
   
-  pred=eventReactive(input$go,{
+  # pred=eventReactive(input$go,{
+  # 
+  #   eos=if_else("Eos" %in% input$vars_to_use,input$eos_bl/1000, NA_integer_)
+  #   age=if_else("Age" %in% input$vars_to_use,input$age_imp, NA_integer_)
+  #   exac=if_else("Exacerbations" %in% input$vars_to_use,input$exac_bl, NA_integer_)
+  #   sex=if_else("Sex" %in% input$vars_to_use,input$sex, NA_character_)
+  #   fev1=if_else("FEV1" %in% input$vars_to_use,input$fev1_bl, NA_integer_)
+  #   smoking=if_else("Smoking" %in% input$vars_to_use,input$smoking_bl, NA_character_)
+  # 
+  # 
+  #   test3=tribble(~"arm_ipd", ~"eos_bl",~"age_imp",~"exac_bl",~"sex",~"fev1_bl",~"smoking_bl",~"trt_dur",
+  #                 "ICS", eos, age, exac, sex,fev1, smoking, input$trt_dur,
+  #                 "Control", eos, age, exac, sex,fev1, smoking, input$trt_dur,)
+  # 
+  #   exac_modsev=predict.submodels(test3, submodels.object_modsev, type="response")
+  #   exac_sev=predict.submodels(test3, submodels.object_sev, type="response")
+  #   exac_pneum=predict.submodels(test3, submodels.object_pneum, type="response")
+  # 
+  #   list("modsev"=exac_modsev,
+  #        "sev"=exac_sev,
+  #        "pneum"=exac_pneum,
+  #        "data"=test3)
+  # 
+  # })
 
-    eos=if_else("Eos" %in% input$vars_to_use,input$eos_bl/1000, NA_integer_)
-    age=if_else("Age" %in% input$vars_to_use,input$age_imp, NA_integer_)
-    exac=if_else("Exacerbations" %in% input$vars_to_use,input$exac_bl, NA_integer_)
-    sex=if_else("Sex" %in% input$vars_to_use,input$sex, NA_character_)
-    fev1=if_else("FEV1" %in% input$vars_to_use,input$fev1_bl, NA_integer_)
-    smoking=if_else("Smoking" %in% input$vars_to_use,input$smoking_bl, NA_character_)
+  
 
-
-    test3=tribble(~"arm_ipd", ~"eos_bl",~"age_imp",~"exac_bl",~"sex",~"fev1_bl",~"smoking_bl",~"trt_dur",
-                  "ICS", eos, age, exac, sex,fev1, smoking, input$trt_dur,
-                  "Control", eos, age, exac, sex,fev1, smoking, input$trt_dur,)
-
-    exac_modsev=predict.submodels(test3, submodels.object_modsev, type="response")
-    exac_sev=predict.submodels(test3, submodels.object_sev, type="response")
-    exac_pneum=predict.submodels(test3, submodels.object_pneum, type="response")
-
-    list("modsev"=exac_modsev,
-         "sev"=exac_sev,
-         "pneum"=exac_pneum,
-         "data"=test3)
-
+  pred <- eventReactive(input$go, {
+    eos <- if_else("Eos" %in% input$vars_to_use, input$eos_bl / 1000, NA_integer_)
+    age <- if_else("Age" %in% input$vars_to_use, input$age_imp, NA_integer_)
+    exac <- if_else("Exacerbations" %in% input$vars_to_use, input$exac_bl, NA_integer_)
+    sex <- if_else("Sex" %in% input$vars_to_use, input$sex, NA_character_)
+    fev1 <- if_else("FEV1" %in% input$vars_to_use, input$fev1_bl, NA_integer_)
+    smoking <- if_else("Smoking" %in% input$vars_to_use, input$smoking_bl, NA_character_)
+    
+    data_to_send <- tribble(
+      ~"arm_ipd", ~"eos_bl", ~"age_imp", ~"exac_bl", ~"sex", ~"fev1_bl", ~"smoking_bl", ~"trt_dur",
+      "ICS", eos, age, exac, sex, fev1, smoking, input$trt_dur,
+      "Control", eos, age, exac, sex, fev1, smoking, input$trt_dur
+    )
+    
+    print("Triggering API call")
+    print(data_to_send) # Log what you're sending
+    
+    tryCatch({
+      api_url <- "http://127.0.0.1:8000/predict"
+      
+      # Use better error handling for the API call
+      response <- httr::POST(
+        url = api_url, 
+        body = list(newdata = as.list(data_to_send)), 
+        encode = "json",
+        httr::timeout(10) # Add timeout to avoid hanging
+      )
+      
+      # Log HTTP status and response
+      print(paste("HTTP Status:", httr::http_status(response)$status))
+      
+      if (httr::http_error(response)) {
+        error_message <- paste("API request failed with status:", httr::http_status(response)$message)
+        print(error_message)
+        stop(error_message)
+      }
+      
+      content <- httr::content(response, "text")
+      print(paste("API Response:", substr(content, 1, 100), "...")) # Preview response
+      content <- jsonlite::fromJSON(content)
+      
+      list(
+        modsev = content$modsev,
+        sev = content$sev,
+        pneum = content$pneum,
+        coefs = content$coefs
+      )
+    }, error = function(e) {
+      print(paste("Error in API call:", e$message))
+      stop(e)
+    })
   })
 
   
 
-  # input_data <- eventReactive(input$go, {
-  #   eos <- if_else("Eos" %in% input$vars_to_use, input$eos_bl / 1000, NA_integer_)
-  #   age <- if_else("Age" %in% input$vars_to_use, input$age_imp, NA_integer_)
-  #   exac <- if_else("Exacerbations" %in% input$vars_to_use, input$exac_bl, NA_integer_)
-  #   sex <- if_else("Sex" %in% input$vars_to_use, input$sex, NA_character_)
-  #   fev1 <- if_else("FEV1" %in% input$vars_to_use, input$fev1_bl, NA_integer_)
-  #   smoking <- if_else("Smoking" %in% input$vars_to_use, input$smoking_bl, NA_character_)
-  #   
-  #   tribble(
-  #     ~"arm_ipd", ~"eos_bl", ~"age_imp", ~"exac_bl", ~"sex", ~"fev1_bl", ~"smoking_bl", ~"trt_dur",
-  #     "ICS", eos, age, exac, sex, fev1, smoking, input$trt_dur,
-  #     "Control", eos, age, exac, sex, fev1, smoking, input$trt_dur
-  #   )
-  # })
-  # 
-  # library(promises)
-  # library(future)
-  # plan(multisession)
-  # 
-  # result_reactive <- reactiveVal(NULL)
-  # 
-  # observeEvent(input_data(), {
-  #   test3 <- input_data()
-  #   
-  #   future({
-  #     tryCatch({
-  #       api_url <- "http://127.0.0.1:8000/predict"
-  #       response <- httr::POST(api_url, body = list(newdata = as.list(test3)), encode = "json")
-  #       content <- httr::content(response, "text")
-  #       content <- jsonlite::fromJSON(content)
-  #       
-  #       list(
-  #         modsev = content$modsev,
-  #         sev = content$sev,
-  #         pneum = content$pneum,
-  #         coefs = content$coefs
-  #       )
-  #     }, error = function(e) {
-  #       stop(e)
-  #     })
-  #   }) %...>%
-  #     result_reactive() %...!%
-  #     (function(e) {
-  #       showNotification("API error occurred", type = "error")
-  #       result_reactive(NULL)
-  #     })
-  # })
-  
 
   
   output$table1=renderUI({
@@ -457,12 +464,11 @@ server <- function(input, output, session) {
     exac_sev=pred()$sev
     exac_pneum=pred()$pneum
     
-     # req(result_reactive())
-    
+    # req(result_reactive())
     # exac_modsev <- result_reactive()$modsev
     # exac_sev <- result_reactive()$sev
     # exac_pneum <- result_reactive()$pneum
-    
+
     tribble(~"outcome",~"trt", ~"events",
             "Mod/Sev Exac", "ICS", sprintf("%.1f",exac_modsev$fit[1]),
             "Mod/Sev Exac", "No ICS", sprintf("%.1f",exac_modsev$fit[2]),
@@ -555,12 +561,14 @@ server <- function(input, output, session) {
     exac_modsev=pred()$modsev
     exac_sev=pred()$sev
     exac_pneum=pred()$pneum
-    #  req(result_reactive())
     
+    print(exac_modsev)
+     
+    # req(result_reactive())
     # exac_modsev <- result_reactive()$modsev
     # exac_sev <- result_reactive()$sev
     # exac_pneum <- result_reactive()$pneum
-    # 
+    # # 
     ms_with_ics=100*exac_modsev$fit[1]
     ms_saved=100*(exac_modsev$fit[2]-exac_modsev$fit[1])
     s_with_ics=100*exac_sev$fit[1]

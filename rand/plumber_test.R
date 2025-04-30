@@ -15,7 +15,7 @@ test_data=tribble(~"arm_ipd", ~"eos_bl",~"age_imp",~"exac_bl",~"sex",~"smoking_b
 # Make the API request
 
 
-response <- httr::POST(api_url, body = list(newdata=as.list(test_data)), 
+response <- httr::POST(api_url, body = list(newdata=as.list(test_data)),
                        encode = "json")
 
 

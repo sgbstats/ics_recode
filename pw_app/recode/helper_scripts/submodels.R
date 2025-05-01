@@ -20,8 +20,8 @@ submodels<- function(data, model, model_fn,submodel_type=c("psm", "ccsm"), force
   
   model=as.formula(model) #coerces the model formula into a formula class object
   mod.data<- get_all_vars(model, data=data) %>%
-    drop_na(all_of(mod.lhs)) %>%
-    drop_na(all_of(force_variables))
+    tidyr::drop_na(all_of(mod.lhs)) %>%
+    tidyr::drop_na(all_of(force_variables))
   
   model_names=names(mod.data)
   
@@ -88,8 +88,8 @@ submodels<- function(data, model, model_fn,submodel_type=c("psm", "ccsm"), force
       
     }
     #this is a fix for vivli
-    for(i in remove_model_data){
-      reg.out[i][["mod"]][[i]]=NULL
+    for(j in remove_model_data){
+      reg.out[[i]][["mod"]][[j]]=NULL
     }
   }
   reg.out[["meta"]][["model"]]=model

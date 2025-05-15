@@ -3,7 +3,7 @@ library(httr)
 library(tidyverse)
 library(jsonlite)
 
-api_url <- "http://127.0.0.1:8000/predict"
+api_url <- "http://127.0.0.1:8000/predict2"
 
 
 

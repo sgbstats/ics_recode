@@ -13,19 +13,18 @@ library(meta)
 library(shinyjs)
 library(flextable)
 library(bslib)
-library(httr)
-library(jsonlite)
-library(promises)
-library(future)
+# library(httr)
+# library(jsonlite)
 # library(googledrive)
 load("Data/imp_aggregated_results.RDa")
 load("Data/vars.RDa")
 load("Data/study_names.RDa")
+# load("Data/test_list.RDa")
 # load("Data/submodels_pneum.RDa")
 # load("Data/submodels_modsev.RDa")
 # load("Data/submodels_sev.RDa")
 source("helper_scripts/prediction.R")
-plan(multisession)
+# plan(multisession)
 unpack=function(list)
 {
   for(i in names(list))
@@ -107,31 +106,31 @@ server <- function(input, output, session) {
               # pickerInput("studies2", "Included Studies", choices = study_names, selected = study_names, multiple = T ),
               actionButton("reset_input2", "Reset inputs")
             ),
-            conditionalPanel(condition = "input.tabselected == 'pred'",
-                             checkboxGroupInput("vars_to_use", label="Vars to use", c("Eos", "Age", "Exacerbations", "FEV1", "Sex", "Smoking"),
-                                                selected = c("Eos", "Age", "Exacerbations", "FEV1", "Sex", "Smoking"), inline=T),
-                             conditionalPanel("input.vars_to_use.includes('Eos')",
-                                              numericInput("eos_bl", label = "Eosinophils (10^6/L)", value = 200, min=0) ),
-                             
-                             conditionalPanel("input.vars_to_use.includes('Age')",
-                                              numericInput("age_imp", label = "Age", value = 65, min=30, max=100)),
-                             
-                             conditionalPanel("input.vars_to_use.includes('Exacerbations')",
-                                              numericInput("exac_bl", label = "Exacberbations in 12m", value = 1, min=0, max=10)),
-                             
-                             conditionalPanel("input.vars_to_use.includes('FEV1')",
-                                              numericInput("fev1_bl", label = "FEV1", value = 0.8, min=0)),
-                             
-                             conditionalPanel("input.vars_to_use.includes('Sex')",
-                                              radioButtons("sex", label = "Sex", c("Male"="M", "Female"="F"), selected = "M", inline=T)),
-                             
-                             conditionalPanel("input.vars_to_use.includes('Smoking')",
-                                              radioButtons("smoking_bl","Smoking history", c("Current"="Current", "Former"="Former"), selected = "Former", inline=T)),
-                             
-                             numericInput("trt_dur", label = "Time horizon", value = 1, min=0.25, max=2),
-                             actionButton("go", "Go"),
-                             actionButton("reset_input5", "Reset input"),
-            ),
+            # conditionalPanel(condition = "input.tabselected == 'pred'",
+            #                  checkboxGroupInput("vars_to_use", label="Vars to use", c("Eos", "Age", "Exacerbations", "FEV1", "Sex", "Smoking"),
+            #                                     selected = c("Eos", "Age", "Exacerbations", "FEV1", "Sex", "Smoking"), inline=T),
+            #                  conditionalPanel("input.vars_to_use.includes('Eos')",
+            #                                   numericInput("eos_bl", label = "Eosinophils (10^6/L)", value = 200, min=0) ),
+            #                  
+            #                  conditionalPanel("input.vars_to_use.includes('Age')",
+            #                                   numericInput("age_imp", label = "Age", value = 65, min=30, max=100)),
+            #                  
+            #                  conditionalPanel("input.vars_to_use.includes('Exacerbations')",
+            #                                   numericInput("exac_bl", label = "Exacberbations in 12m", value = 1, min=0, max=10)),
+            #                  
+            #                  conditionalPanel("input.vars_to_use.includes('FEV1')",
+            #                                   numericInput("fev1_bl", label = "FEV1", value = 0.8, min=0)),
+            #                  
+            #                  conditionalPanel("input.vars_to_use.includes('Sex')",
+            #                                   radioButtons("sex", label = "Sex", c("Male"="M", "Female"="F"), selected = "M", inline=T)),
+            #                  
+            #                  conditionalPanel("input.vars_to_use.includes('Smoking')",
+            #                                   radioButtons("smoking_bl","Smoking history", c("Current"="Current", "Former"="Former"), selected = "Former", inline=T)),
+            #                  
+            #                  numericInput("trt_dur", label = "Time horizon", value = 1, min=0.25, max=2),
+            #                  actionButton("go", "Go"),
+            #                  actionButton("reset_input5", "Reset input"),
+            # ),
             br(),
             actionButton("logout_btn", "Logout", class = "btn-danger")
           ),
@@ -142,20 +141,20 @@ server <- function(input, output, session) {
               id = "tabselected",
               tabPanel("Forest Plot", value = "forest", plotOutput("forest")),
               tabPanel("Marginal Plot", value = "marginal", plotOutput("marginal")),
-              tabPanel("Prediction", value = "pred",
-                       conditionalPanel(
-                         condition = "!output.has_prediction_data",
-                         HTML("<b>Please press go to see the predictions</b>")
-                       ),
-                       conditionalPanel(
-                         condition = "output.has_prediction_data",
-                         navset_card_underline(
-                           nav_panel("Plot", plotOutput("waffle1")),
-                           nav_panel("Table", uiOutput("table1")),
-                           nav_panel("Coefficients", uiOutput("coefs2"))
-                         )
-                       )
-              ),
+              # tabPanel("Prediction", value = "pred",
+              #          conditionalPanel(
+              #            condition = "!output.has_prediction_data",
+              #            HTML("<b>Please press go to see the predictions</b>")
+              #          ),
+              #          conditionalPanel(
+              #            condition = "output.has_prediction_data",
+              #            navset_card_underline(
+              #              nav_panel("Plot", plotOutput("waffle1")),
+              #              nav_panel("Table", uiOutput("table1")),
+              #              nav_panel("Coefficients", uiOutput("coefs2"))
+              #            )
+              #          )
+              # ),
             )
           )
         )
@@ -374,7 +373,7 @@ server <- function(input, output, session) {
     
     
   })
-  
+  #original method
   # pred=eventReactive(input$go,{
   # 
   #   eos=if_else("Eos" %in% input$vars_to_use,input$eos_bl/1000, NA_integer_)
@@ -399,201 +398,229 @@ server <- function(input, output, session) {
   #        "data"=test3)
   # 
   # })
-
-  
-
-  pred <- eventReactive(input$go, {
-    eos <- if_else("Eos" %in% input$vars_to_use, input$eos_bl / 1000, NA_integer_)
-    age <- if_else("Age" %in% input$vars_to_use, input$age_imp, NA_integer_)
-    exac <- if_else("Exacerbations" %in% input$vars_to_use, input$exac_bl, NA_integer_)
-    sex <- if_else("Sex" %in% input$vars_to_use, input$sex, NA_character_)
-    fev1 <- if_else("FEV1" %in% input$vars_to_use, input$fev1_bl, NA_integer_)
-    smoking <- if_else("Smoking" %in% input$vars_to_use, input$smoking_bl, NA_character_)
-    
-    data_to_send <- tribble(
-      ~"arm_ipd", ~"eos_bl", ~"age_imp", ~"exac_bl", ~"sex", ~"fev1_bl", ~"smoking_bl", ~"trt_dur",
-      "ICS", eos, age, exac, sex, fev1, smoking, input$trt_dur,
-      "Control", eos, age, exac, sex, fev1, smoking, input$trt_dur
-    )
-    
-    print("Triggering API call")
-    print(data_to_send) # Log what you're sending
-    
-    tryCatch({
-      api_url <- "http://127.0.0.1:8000/predict"
-      
-      # Use better error handling for the API call
-      response <- httr::POST(
-        url = api_url, 
-        body = list(newdata = as.list(data_to_send)), 
-        encode = "json",
-        httr::timeout(10) # Add timeout to avoid hanging
-      )
-      
-      # Log HTTP status and response
-      print(paste("HTTP Status:", httr::http_status(response)$status))
-      
-      if (httr::http_error(response)) {
-        error_message <- paste("API request failed with status:", httr::http_status(response)$message)
-        print(error_message)
-        stop(error_message)
-      }
-      
-      content <- httr::content(response, "text")
-      print(paste("API Response:", substr(content, 1, 100), "...")) # Preview response
-      content <- jsonlite::fromJSON(content)
-      
-      list(
-        modsev = content$modsev,
-        sev = content$sev,
-        pneum = content$pneum,
-        coefs = content$coefs
-      )
-    }, error = function(e) {
-      print(paste("Error in API call:", e$message))
-      stop(e)
-    })
-  })
-
-  
-
-
-  
-  output$table1=renderUI({
-    exac_modsev=pred()$modsev
-    exac_sev=pred()$sev
-    exac_pneum=pred()$pneum
-    
-    # req(result_reactive())
-    # exac_modsev <- result_reactive()$modsev
-    # exac_sev <- result_reactive()$sev
-    # exac_pneum <- result_reactive()$pneum
-
-    tribble(~"outcome",~"trt", ~"events",
-            "Mod/Sev Exac", "ICS", sprintf("%.1f",exac_modsev$fit[1]),
-            "Mod/Sev Exac", "No ICS", sprintf("%.1f",exac_modsev$fit[2]),
-            "Mod/Sev Exac", "Absolute difference", sprintf("%.1f",exac_modsev$fit[1]-exac_modsev$fit[2]),
-            "Mod/Sev Exac", "Relative difference", paste0(sprintf("%.1f",100*(exac_modsev$fit[1]-exac_modsev$fit[2])/exac_modsev$fit[2]), "%"),
-            "Severe Exac", "ICS", sprintf("%.1f",exac_sev$fit[1]),
-            "Severe Exac", "No ICS", sprintf("%.1f",exac_sev$fit[2]),
-            "Severe Exac", "Absolute difference", sprintf("%.1f",exac_sev$fit[1]-exac_sev$fit[2]),
-            "Severe Exac", "Relative difference", paste0(sprintf("%.1f",100*(exac_sev$fit[1]-exac_sev$fit[2])/exac_sev$fit[2]), "%"),
-            "Pneumonias", "ICS", sprintf("%.1f",exac_pneum$fit[1]),
-            "Pneumonias", "No ICS", sprintf("%.1f",exac_pneum$fit[2]),
-            "Pneumonias", "Absolute difference", sprintf("%.1f",exac_pneum$fit[1]-exac_pneum$fit[2]),
-            "Pneumonias", "Relative difference", paste0(sprintf("%.1f",100*(exac_pneum$fit[1]-exac_pneum$fit[2])/exac_pneum$fit[2]), "%")) %>% 
-      flextable::flextable() %>% 
-      set_header_labels(outcome="Outcome",
-                        trt="",
-                        events="Predicted") %>% 
-      align(align="center", part="header") %>% 
-      align(j=3,align="center", part="body") %>% 
-      valign(valign="bottom", part = "header")%>% 
-      valign( valign="top", part = "body")%>% 
-      merge_v(j=1:2)%>% 
-      autofit() %>%
-      font(fontname = "Arial", part="all") %>% 
-      htmltools_value()
-    
-  })
-  
-  # output$coefs=renderUI({
-  #   
-  #   
-  #   
-  #   unpack(missingness_pattern(pred()$data))
-  #   
-  #   coef_modsev=submodel.print(submodels.object_modsev)
-  #   coef_sev=submodel.print(submodels.object_sev)
-  #   coef_pneum=submodel.print(submodels.object_pneum)
-  #   
-  #   interpretation=data.frame("var"=c("(Intercept)","age_imp","arm_ipdICS", "arm_ipdICS:eos_bl","eos_bl","exac_bl","fev1_bl","sexM","smoking_blCurrent"),
-  #                             "interpretation"=c("Intercept", "Age", "ICS-Yes", "Eos Interaction", "Eos/10^9", "Per Exac", "FEV1/L", "Sex-Male", "Smoking-Current"))
-  #   
-  #   coef_modsev[["coefficients"]] %>% rename("modsev"="coef") %>% 
-  #     merge(coef_sev[["coefficients"]] %>% rename("sev"="coef") ) %>%
-  #     merge(coef_pneum[["coefficients"]] %>% rename("pneum"="coef") ) %>%
-  #     mutate(pattern=as.character(pattern)) %>%
-  #     filter(pattern==as.character(tmp.pattern[1])) %>%
-  #     merge(interpretation) %>%
-  #     dplyr::select(interpretation, modsev, sev, pneum) %>%
-  #     mutate(modsev=sprintf("%.3f", modsev),
-  #            sev=sprintf("%.3f", sev),
-  #            pneum=sprintf("%.3f", pneum)) %>% 
-  #     flextable::flextable() %>% 
-  #     set_header_labels(interpretation="Variable",
-  #                       modsev="Mod/Sev",
-  #                       sev="Sev",
-  #                       pneum="Pneum") %>%
-  #     align(align="center", part="header") %>%
-  #     align(j=2:4,align="center", part="body") %>%
-  #     valign(valign="bottom", part = "header")%>%
-  #     valign( valign="top", part = "body")%>%
-  #     # merge_v(j=1:2)%>%
-  #     autofit() %>%
-  #     font(fontname = "Arial", part="all") %>% 
-  #     htmltools_value()
-  # })
-  
-  output$coefs2=renderUI({
-
-
-
-    pred()$coefs %>%
-    # result_reactive()$coefs
-      flextable::flextable() %>%
-      set_header_labels(interpretation="Variable",
-                        modsev="Mod/Sev",
-                        sev="Sev",
-                        pneum="Pneum") %>%
-      align(align="center", part="header") %>%
-      align(j=2:4,align="center", part="body") %>%
-      valign(valign="bottom", part = "header")%>%
-      valign( valign="top", part = "body")%>%
-      # merge_v(j=1:2)%>%
-      autofit() %>%
-      font(fontname = "Arial", part="all") %>%
-      htmltools_value()
-  })
-  
-  
-  output$waffle1=renderPlot({
-    exac_modsev=pred()$modsev
-    exac_sev=pred()$sev
-    exac_pneum=pred()$pneum
-    
-    print(exac_modsev)
-     
-    # req(result_reactive())
-    # exac_modsev <- result_reactive()$modsev
-    # exac_sev <- result_reactive()$sev
-    # exac_pneum <- result_reactive()$pneum
-    # # 
-    ms_with_ics=100*exac_modsev$fit[1]
-    ms_saved=100*(exac_modsev$fit[2]-exac_modsev$fit[1])
-    s_with_ics=100*exac_sev$fit[1]
-    s_saved=100*(exac_sev$fit[2]-exac_sev$fit[1])
-    p_with_ics=100*exac_pneum$fit[1]
-    p_saved=100*(exac_pneum$fit[2]-exac_pneum$fit[1])
-    
-    data <- tibble(
-      group = factor(c(rep(c("Events avoided with ICS", "Expected events"),3)), levels = c("Events avoided with ICS", "Expected events", "Events avoided by not using ICS"), ordered = T),
-      value = c(ms_saved, ms_with_ics, s_saved, s_with_ics, p_saved, p_with_ics),
-      cat=factor(rep(c("Mod/sev\nexacacerbations",  "Severe\nexacerbations",  "Pneumonias"), each=2),levels = c("Mod/sev\nexacacerbations",  "Severe\nexacerbations",  "Pneumonias"), ordered = T),
-    ) %>% 
-      mutate(group=case_when(group=="Expected events"~"Expected events",
-                             value<0~"Events avoided by not using ICS", 
-                             T~"Events avoided with ICS"))
-    
-    ggplot(data, aes(x=cat,y = value, fill = group)) +
-      geom_col(position = "stack") +
-      geom_text(aes(label = sprintf("%.0f", abs(value))), position = position_stack(vjust = 0.5)) +
-      labs(x = "", y = "Events/100 people", fill = "") +
-      theme_minimal()+
-      scale_fill_manual(values=c("Events avoided with ICS"="#4DAF4A",
-                                 "Expected events"="#007AC0",
-                                 "Events avoided by not using ICS"="#E41A1C"))
-  })
+# 
+#   
+# # API
+#   pred <- eventReactive(input$go, {
+#     eos <- if_else("Eos" %in% input$vars_to_use, input$eos_bl / 1000, NA_integer_)
+#     age <- if_else("Age" %in% input$vars_to_use, input$age_imp, NA_integer_)
+#     exac <- if_else("Exacerbations" %in% input$vars_to_use, input$exac_bl, NA_integer_)
+#     sex <- if_else("Sex" %in% input$vars_to_use, input$sex, NA_character_)
+#     fev1 <- if_else("FEV1" %in% input$vars_to_use, input$fev1_bl, NA_integer_)
+#     smoking <- if_else("Smoking" %in% input$vars_to_use, input$smoking_bl, NA_character_)
+# 
+#     data_to_send <- tribble(
+#       ~"arm_ipd", ~"eos_bl", ~"age_imp", ~"exac_bl", ~"sex", ~"fev1_bl", ~"smoking_bl", ~"trt_dur",
+#       "ICS", eos, age, exac, sex, fev1, smoking, input$trt_dur,
+#       "Control", eos, age, exac, sex, fev1, smoking, input$trt_dur
+#     )
+# 
+#     print("Triggering API call")
+#     print(data_to_send) # Log what you're sending
+# 
+#     tryCatch({
+#       api_url <- "http://127.0.0.1:8000/predict2"
+# 
+#       # Use better error handling for the API call
+#       response <- httr::POST(
+#         url = api_url,
+#         body = list(newdata = as.list(data_to_send)),
+#         encode = "json",
+#         httr::timeout(10) # Add timeout to avoid hanging
+#       )
+# 
+#       # Log HTTP status and response
+#       print(paste("HTTP Status:", httr::http_status(response)$status))
+# 
+#       if (httr::http_error(response)) {
+#         error_message <- paste("API request failed with status:", httr::http_status(response)$message)
+#         print(error_message)
+#         stop(error_message)
+#       }
+# 
+#       content <- httr::content(response, "text")
+#       print(paste("API Response:", substr(content, 1, 100), "...")) # Preview response
+#       content <- jsonlite::fromJSON(content)
+# 
+#       list(
+#         modsev = content$modsev,
+#         sev = content$sev,
+#         pneum = content$pneum,
+#         coefs = content$coefs
+#       )
+#     }, error = function(e) {
+#       print(paste("Error in API call:", e$message))
+#       stop(e)
+#     })
+#   })
+# 
+#   # pred <- eventReactive(input$go, {
+#   #   eos <- if_else("Eos" %in% input$vars_to_use, input$eos_bl / 1000, NA_integer_)
+#   #   age <- if_else("Age" %in% input$vars_to_use, as.numeric(input$age_imp), NA_integer_)
+#   #   exac <- if_else("Exacerbations" %in% input$vars_to_use, as.numeric(input$exac_bl), NA_integer_)
+#   #   sex <- if_else("Sex" %in% input$vars_to_use, input$sex, NA_character_)
+#   #   fev1 <- if_else("FEV1" %in% input$vars_to_use, input$fev1_bl, NA_integer_)
+#   #   smoking <- if_else("Smoking" %in% input$vars_to_use, input$smoking_bl, NA_character_)
+#   #   
+#   #   data_to_send <- tribble(
+#   #     ~"arm_ipd", ~"eos_bl", ~"age_imp", ~"exac_bl", ~"sex", ~"fev1_bl", ~"smoking_bl", ~"trt_dur",
+#   #     "ICS", eos, age, exac, sex, fev1, smoking, 1,
+#   #     "Control", eos, age, exac, sex, fev1, smoking, 1
+#   #   )
+#   #   
+#   #   matched_test=match_elements(original_list = original_list,
+#   #                              data_to_send %>% dplyr::select(names(original_list)) %>% 
+#   #                                mutate(sex=as.character(sex),
+#   #                                       arm_ipd=as.character(arm_ipd),
+#   #                                       smoking_bl=as.character(smoking_bl)) %>% 
+#   #                                as.list())
+#   #   predictions=get_data_from_nested_list(matched_test, test_list)
+#   #   predictions <- predictions %>%
+#   #     mutate(across(contains("fit"), ~ . * imput$trt_dur))
+#   #   list("modsev"=predictions$ms_fit,
+#   #               "sev"=predictions$s_fit,
+#   #               "pneum"=predictions$p_fit)
+#   #   
+#   # })
+#   
+# 
+# 
+#   
+#   output$table1=renderUI({
+#     exac_modsev=pred()$modsev
+#     exac_sev=pred()$sev
+#     exac_pneum=pred()$pneum
+#     
+#     # req(result_reactive())
+#     # exac_modsev <- result_reactive()$modsev
+#     # exac_sev <- result_reactive()$sev
+#     # exac_pneum <- result_reactive()$pneum
+# 
+#     tribble(~"outcome",~"trt", ~"events",
+#             "Mod/Sev Exac", "ICS", sprintf("%.1f",exac_modsev$fit[1]),
+#             "Mod/Sev Exac", "No ICS", sprintf("%.1f",exac_modsev$fit[2]),
+#             "Mod/Sev Exac", "Absolute difference", sprintf("%.1f",exac_modsev$fit[1]-exac_modsev$fit[2]),
+#             "Mod/Sev Exac", "Relative difference", paste0(sprintf("%.1f",100*(exac_modsev$fit[1]-exac_modsev$fit[2])/exac_modsev$fit[2]), "%"),
+#             "Severe Exac", "ICS", sprintf("%.1f",exac_sev$fit[1]),
+#             "Severe Exac", "No ICS", sprintf("%.1f",exac_sev$fit[2]),
+#             "Severe Exac", "Absolute difference", sprintf("%.1f",exac_sev$fit[1]-exac_sev$fit[2]),
+#             "Severe Exac", "Relative difference", paste0(sprintf("%.1f",100*(exac_sev$fit[1]-exac_sev$fit[2])/exac_sev$fit[2]), "%"),
+#             "Pneumonias", "ICS", sprintf("%.1f",exac_pneum$fit[1]),
+#             "Pneumonias", "No ICS", sprintf("%.1f",exac_pneum$fit[2]),
+#             "Pneumonias", "Absolute difference", sprintf("%.1f",exac_pneum$fit[1]-exac_pneum$fit[2]),
+#             "Pneumonias", "Relative difference", paste0(sprintf("%.1f",100*(exac_pneum$fit[1]-exac_pneum$fit[2])/exac_pneum$fit[2]), "%")) %>% 
+#       flextable::flextable() %>% 
+#       set_header_labels(outcome="Outcome",
+#                         trt="",
+#                         events="Predicted") %>% 
+#       align(align="center", part="header") %>% 
+#       align(j=3,align="center", part="body") %>% 
+#       valign(valign="bottom", part = "header")%>% 
+#       valign( valign="top", part = "body")%>% 
+#       merge_v(j=1:2)%>% 
+#       autofit() %>%
+#       font(fontname = "Arial", part="all") %>% 
+#       htmltools_value()
+#     
+#   })
+#   
+#   # output$coefs=renderUI({
+#   #   
+#   #   
+#   #   
+#   #   unpack(missingness_pattern(pred()$data))
+#   #   
+#   #   coef_modsev=submodel.print(submodels.object_modsev)
+#   #   coef_sev=submodel.print(submodels.object_sev)
+#   #   coef_pneum=submodel.print(submodels.object_pneum)
+#   #   
+#   #   interpretation=data.frame("var"=c("(Intercept)","age_imp","arm_ipdICS", "arm_ipdICS:eos_bl","eos_bl","exac_bl","fev1_bl","sexM","smoking_blCurrent"),
+#   #                             "interpretation"=c("Intercept", "Age", "ICS-Yes", "Eos Interaction", "Eos/10^9", "Per Exac", "FEV1/L", "Sex-Male", "Smoking-Current"))
+#   #   
+#   #   coef_modsev[["coefficients"]] %>% rename("modsev"="coef") %>% 
+#   #     merge(coef_sev[["coefficients"]] %>% rename("sev"="coef") ) %>%
+#   #     merge(coef_pneum[["coefficients"]] %>% rename("pneum"="coef") ) %>%
+#   #     mutate(pattern=as.character(pattern)) %>%
+#   #     filter(pattern==as.character(tmp.pattern[1])) %>%
+#   #     merge(interpretation) %>%
+#   #     dplyr::select(interpretation, modsev, sev, pneum) %>%
+#   #     mutate(modsev=sprintf("%.3f", modsev),
+#   #            sev=sprintf("%.3f", sev),
+#   #            pneum=sprintf("%.3f", pneum)) %>% 
+#   #     flextable::flextable() %>% 
+#   #     set_header_labels(interpretation="Variable",
+#   #                       modsev="Mod/Sev",
+#   #                       sev="Sev",
+#   #                       pneum="Pneum") %>%
+#   #     align(align="center", part="header") %>%
+#   #     align(j=2:4,align="center", part="body") %>%
+#   #     valign(valign="bottom", part = "header")%>%
+#   #     valign( valign="top", part = "body")%>%
+#   #     # merge_v(j=1:2)%>%
+#   #     autofit() %>%
+#   #     font(fontname = "Arial", part="all") %>% 
+#   #     htmltools_value()
+#   # })
+#   
+#   output$coefs2=renderUI({
+# 
+# 
+# 
+#     pred()$coefs %>%
+#     # result_reactive()$coefs
+#       flextable::flextable() %>%
+#       set_header_labels(interpretation="Variable",
+#                         modsev="Mod/Sev",
+#                         sev="Sev",
+#                         pneum="Pneum") %>%
+#       align(align="center", part="header") %>%
+#       align(j=2:4,align="center", part="body") %>%
+#       valign(valign="bottom", part = "header")%>%
+#       valign( valign="top", part = "body")%>%
+#       # merge_v(j=1:2)%>%
+#       autofit() %>%
+#       font(fontname = "Arial", part="all") %>%
+#       htmltools_value()
+#   })
+#   
+#   
+#   output$waffle1=renderPlot({
+#     exac_modsev=pred()$modsev
+#     exac_sev=pred()$sev
+#     exac_pneum=pred()$pneum
+#     
+#     print(exac_modsev)
+#      
+#     # req(result_reactive())
+#     # exac_modsev <- result_reactive()$modsev
+#     # exac_sev <- result_reactive()$sev
+#     # exac_pneum <- result_reactive()$pneum
+#     # # 
+#     ms_with_ics=100*exac_modsev$fit[1]
+#     ms_saved=100*(exac_modsev$fit[2]-exac_modsev$fit[1])
+#     s_with_ics=100*exac_sev$fit[1]
+#     s_saved=100*(exac_sev$fit[2]-exac_sev$fit[1])
+#     p_with_ics=100*exac_pneum$fit[1]
+#     p_saved=100*(exac_pneum$fit[2]-exac_pneum$fit[1])
+#     
+#     data <- tibble(
+#       group = factor(c(rep(c("Events avoided with ICS", "Expected events"),3)), levels = c("Events avoided with ICS", "Expected events", "Events avoided by not using ICS"), ordered = T),
+#       value = c(ms_saved, ms_with_ics, s_saved, s_with_ics, p_saved, p_with_ics),
+#       cat=factor(rep(c("Mod/sev\nexacacerbations",  "Severe\nexacerbations",  "Pneumonias"), each=2),levels = c("Mod/sev\nexacacerbations",  "Severe\nexacerbations",  "Pneumonias"), ordered = T),
+#     ) %>% 
+#       mutate(group=case_when(group=="Expected events"~"Expected events",
+#                              value<0~"Events avoided by not using ICS", 
+#                              T~"Events avoided with ICS"))
+#     
+#     ggplot(data, aes(x=cat,y = value, fill = group)) +
+#       geom_col(position = "stack") +
+#       geom_text(aes(label = sprintf("%.0f", abs(value))), position = position_stack(vjust = 0.5)) +
+#       labs(x = "", y = "Events/100 people", fill = "") +
+#       theme_minimal()+
+#       scale_fill_manual(values=c("Events avoided with ICS"="#4DAF4A",
+#                                  "Expected events"="#007AC0",
+#                                  "Events avoided by not using ICS"="#E41A1C"))
+#   })
 }
 
 # Run the app

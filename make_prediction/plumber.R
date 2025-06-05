@@ -27,7 +27,7 @@ coef_pneum=submodel.print(submodels.object_pneum)
 interpretation=data.frame("var"=c("(Intercept)","age_imp","arm_ipdICS", "arm_ipdICS:eos_bl","eos_bl","exac_bl","fev1_bl","sexM","smoking_blCurrent"),
                           "interpretation"=c("Intercept", "Age", "ICS-Yes", "Eos Interaction", "Eos/10^9", "Per Exac", "FEV1/L", "Sex-Male", "Smoking-Current"))
 
-
+test_list=build_nested_list(test_list_df, value_cols = 9:14)
 #* Log the incoming request
 #* @filter logger
 function(req) {

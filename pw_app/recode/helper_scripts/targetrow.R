@@ -1,7 +1,7 @@
 
 library(tidyr)
 library(dplyr)
-
+library(purrr)
 match_elements <- function(original_list, supplied_list) {
   
   if(class(supplied_list)=="data.frame"){
@@ -81,7 +81,7 @@ build_nested_list <- function(df, col_start = 1, col_end = 8, value_cols = 9:10)
   grouped <- split(df, df[[col_start]])
   
   # Recursively process each group
-  result <- map(grouped, ~ build_nested_list(.x, col_start + 1, col_end, value_cols))
+  result <- purrr::map(grouped, ~ build_nested_list(.x, col_start + 1, col_end, value_cols))
   
   
   result[["vars"]] <- names(df)[col_start:col_end]
